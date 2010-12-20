@@ -18,21 +18,40 @@ $.fn.tree = function(settings){
 		
 		//add the role and default state attributes
 		if( !$('body').is('[role]') ){ $('body').attr('role','application'); }
+		
 		//add role and class of tree
 		tree.attr({'role': 'tree'}).addClass('tree');
+		
 		//set first node's tabindex to 0
 		tree.find('a:eq(0)').attr('tabindex','0');
+		
 		//set all others to -1
 		tree.find('a:gt(0)').attr('tabindex','-1');
+		
 		//add group role and tree-group-collapsed class to all ul children
 		tree.find('ul').attr('role','group').addClass('tree-group-collapsed');
+		
 		//add treeitem role to all li children
-		tree.find('li').attr('role','treeitem');
+		tree
+			.find('li')
+			.attr('role','treeitem');
+
+		// Toggle icon
+		var icon = $('<span />')
+			.addClass('tree-toggle');
+		
+		// Prepend toggle icon to tree anchors		
+		tree.find('a')
+			.prepend('<img src="http://kohana3-examples/modules/admin/media/img/ui-theme/icon_file.gif" />')
+			.prepend(icon);
+				
 		//find tree group parents
 		tree.find('li:has(ul)')
 				.attr('aria-expanded', 'false')
 				.find('>a')
-				.addClass('tree-parent tree-parent-collapsed');
+				.addClass('tree-parent tree-parent-collapsed')
+				.find('.tree-toggle')
+				.addClass('tree-toggle-parent');
 	
 		//expanded at load		
 		tree
@@ -120,10 +139,11 @@ $.fn.tree = function(settings){
 			.click(function(event){
 				//save reference to event target
 				var target = $(event.target);
+
 				//check if target is a tree node
-				if( target.is('a.tree-parent') ){
-					target.trigger('toggle');
-					target.eq(0).focus();
+				if( target.is('span.tree-toggle-parent') ){
+					target.parent().trigger('toggle');
+					target.parent().eq(0).focus();
 					//return click event false because it's a tree node (folder)
 					return false;
 				}
