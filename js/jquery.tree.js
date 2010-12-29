@@ -11,6 +11,19 @@ $.fn.tree = function(settings){
 		expanded: ''
 	},settings);
 	
+	function trigger(scope, callback, arg){
+		var type = typeof callback;
+
+		if ( type === 'string' && o[ callback ] ) {
+
+			o[ callback ].apply( scope, arg );
+
+		} else if ( type === 'function' ) {
+
+			callback.apply( scope, arg );
+		}
+	};
+	
 	return $(this).each(function(){
 		if( !$(this).parents('.tree').length ){
 		//save reference to tree UL
@@ -37,20 +50,25 @@ $.fn.tree = function(settings){
 			.attr('role','treeitem');
 
 		// Toggle icon
-		var icon = $('<span />')
-			.addClass('tree-toggle');
+		var toggleIcon = $('<span />')
+			.addClass('tree-icon-toggle');
+			
+		// Item icon
+		var itemIcon = $('<span />')
+			.addClass('tree-icon-item');
 		
-		// Prepend toggle icon to tree anchors		
+		// Prepend item & toggle icons to tree anchors		
 		tree.find('a')
-			.prepend('<img src="http://kohana3-examples/modules/admin/media/img/ui-theme/icon_file.gif" />')
-			.prepend(icon);
+			.prepend(itemIcon)
+			.prepend(toggleIcon);
 				
 		//find tree group parents
 		tree.find('li:has(ul)')
 				.attr('aria-expanded', 'false')
+				.addClass('expandable')
 				.find('>a')
 				.addClass('tree-parent tree-parent-collapsed')
-				.find('.tree-toggle')
+				.find('.tree-icon-toggle')
 				.addClass('tree-toggle-parent');
 	
 		//expanded at load		
@@ -66,19 +84,25 @@ $.fn.tree = function(settings){
 		//bind the custom events
 		tree
 			//expand a tree node
-			.bind('expand',function(event){
+			.bind('expand',function(event, speed){
+				trigger(event.target, 'onExpand', [event]);
+				speed = speed === undefined ? 150 : speed;
 				var target = $(event.target) || tree.find('a[tabindex=0]');
 				target.removeClass('tree-parent-collapsed');
-				target.next().hide().removeClass('tree-group-collapsed').slideDown(150, function(){
+				target.parent().removeClass('expandable').addClass('collapsable');
+				target.next().hide().removeClass('tree-group-collapsed').slideDown(speed, function(){
 					$(this).removeAttr('style');
 					target.parent().attr('aria-expanded', 'true');
 				});
 			})
 			//collapse a tree node
-			.bind('collapse',function(event){
+			.bind('collapse',function(event, speed){
+				trigger(event.target, 'onCollapse', [event]);
+				speed = speed === undefined ? 150 : speed;
 				var target = $(event.target) || tree.find('a[tabindex=0]');
 				target.addClass('tree-parent-collapsed');
-				target.next().slideUp(150, function(){
+				target.parent().removeClass('collapsable').addClass('expandable');
+				target.next().slideUp(speed, function(){
 					target.parent().attr('aria-expanded', 'false');
 					$(this).addClass('tree-group-collapsed').removeAttr('style');
 				});
@@ -86,12 +110,12 @@ $.fn.tree = function(settings){
 			.bind('toggle',function(event){
 				var target = $(event.target) || tree.find('a[tabindex=0]');
 				//check if target parent LI is collapsed
-				if( target.parent().is('[aria-expanded=false]') ){ 
+				if( target.parent().is('[aria-expanded=false]') ){					
 					//call expand function on the target
 					target.trigger('expand');
 				}
 				//otherwise, parent must be expanded
-				else{ 
+				else{					 
 					//collapse the target
 					target.trigger('collapse');
 				}
