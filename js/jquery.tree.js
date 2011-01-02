@@ -8,7 +8,9 @@
  */
 $.fn.tree = function(settings){
 	var o = $.extend({
-		expanded: ''
+		expanded: '',
+		checkbox: null,
+		checkboxName: null
 	},settings);
 	
 	function trigger(scope, callback, arg){
@@ -49,21 +51,27 @@ $.fn.tree = function(settings){
 			.find('li')
 			.attr('role','treeitem');
 
-		// Toggle icon
-		var toggleIcon = $('<span />')
-			.addClass('tree-icon-toggle');
-			
-		// Item icon
-		var itemIcon = $('<span />')
-			.addClass('tree-icon-item');
-		
-		// Prepend item & toggle icons to tree anchors		
+		// Prepend item & toggle icons (and optional checkbox) to tree anchors		
 		tree.find('a')
-			.prepend(itemIcon)
-			.prepend(toggleIcon);
-				
+			.each(function(){
+				var toggleIcon = $('<span />').addClass('tree-icon-toggle-transparent'),
+					itemIcon = $('<span />').addClass('tree-icon-item'),
+					anchor = $(this);					
+				anchor.prepend(itemIcon);
+				anchor.before(toggleIcon);
+				if (o.checkbox){					
+					anchor.before($('<input />', {
+						type: 'checkbox',
+						class: 'checkbox',
+						name: o.checkboxName + '[]',
+						value: anchor.data('id'),
+						'data-id': anchor.data('id')
+					}));					
+				}				
+			});		
+			
 		//find tree group parents
-		tree.find('li:has(ul)')
+		tree.find('li:has(ul)')	
 				.attr('aria-expanded', 'false')
 				.addClass('expandable')
 				.find('>a')
@@ -161,15 +169,10 @@ $.fn.tree = function(settings){
 				$(event.target).attr('tabindex','0').addClass('tree-item-active');
 			})
 			.click(function(event){
-				//save reference to event target
 				var target = $(event.target);
-
 				//check if target is a tree node
-				if( target.is('span.tree-toggle-parent') ){
-					target.parent().trigger('toggle');
-					target.parent().eq(0).focus();
-					//return click event false because it's a tree node (folder)
-					return false;
+				if( target.is('span.tree-icon-toggle') ){
+					target.siblings('.tree-parent').trigger('toggle').eq(0).focus();
 				}
 			})
 			.keydown(function(event){	
